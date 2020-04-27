@@ -17,3 +17,5 @@ High level todos:
 * Plenty of refactoring, I'm sure
 * potentially expand past DS1
 * Clean up C# sins. I don't know what they are yet, but I'm sure I committed them.
+* Backup files if they'll be overwritten.
+* Make an dead simple way for users to load data, not just CLI. Suggestions were .bat or drag-and-drop (and maybe just load supported files?)
