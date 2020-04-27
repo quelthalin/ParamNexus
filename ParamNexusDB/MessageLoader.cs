@@ -11,7 +11,7 @@ namespace ParamNexusDB
     {
         // All the msg filenames are in Japanese. Give a vaguely useful English translation for querying.
         // TODO this should be configurable by game.
-        private readonly Dictionary<string, string> DesMsgFileNamesToEnglish = new Dictionary<string, string>()
+        private static readonly Dictionary<string, string> DesMsgFileNamesToEnglish = new Dictionary<string, string>()
         {
             { "NPC名", "npc_name" },  // 18
             { "アイテムうんちく", "item_lore" },  // 24
@@ -47,87 +47,72 @@ namespace ParamNexusDB
             { "魔法説明", "magic_description" }  // 28
         };
 
-        private readonly string conStr;
-
-        public MessageLoader(string conStr)
-        {
-            // If we don't do this, shift-jis won't work.
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            this.conStr = conStr;
-        }
-
-        /// <summary>
-        /// Gets a connection to our database. The caller is expected to properly close the connection.
-        /// </summary>
-        /// <returns></returns>
-        public SQLiteConnection GetConnection()
-        {
-            var con = new SQLiteConnection(conStr);
-            return con;
-        }
-
-        private void ReadMessagesIntoDatabase(string name, FMG msgFile)
+        private static void ReadMessagesIntoDatabase(SQLiteConnection con, string name, FMG msgFile)
         {
             var tableName = DesMsgFileNamesToEnglish.TryGetValue(name, out string value) ? value : name;
             Console.WriteLine("Dropping table: " + tableName);
 
-            using (var con = GetConnection())
+
+            using (var cmd = new SQLiteCommand("DROP TABLE IF EXISTS " + tableName, con))
             {
-                con.Open();
-                using (var cmd = new SQLiteCommand("DROP TABLE IF EXISTS " + tableName, con))
+                cmd.ExecuteNonQuery();
+            }
+
+            Console.WriteLine("Creating table: " + tableName);
+            var sb = new StringBuilder();
+            sb.Append(@"CREATE TABLE '");
+            sb.Append(tableName);
+            sb.Append("' (");
+
+            sb.Append(@"'id' INTEGER NOT NULL PRIMARY KEY,");
+            sb.Append(@"'message' TEXT);");
+
+            using (var cmd = new SQLiteCommand(sb.ToString(), con))
+            {
+                cmd.ExecuteNonQuery();
+            }
+
+            // Actually insert our data
+            sb.Clear();
+            sb.Append(@"INSERT INTO '");
+            sb.Append(tableName);
+            sb.Append(@"' (id, message) VALUES($id, $message);");
+
+            using (var cmd = new SQLiteCommand(sb.ToString(), con))
+            {
+                var idParam = cmd.CreateParameter();
+                idParam.ParameterName = @"$id";
+                cmd.Parameters.Add(idParam);
+
+                var msgParam = cmd.CreateParameter();
+                msgParam.IsNullable = true;
+                msgParam.ParameterName = @"$message";
+                cmd.Parameters.Add(msgParam);
+
+                foreach (FMG.Entry entry in msgFile.Entries)
                 {
+                    idParam.Value = entry.ID;
+                    msgParam.Value = entry.Text;
+
                     cmd.ExecuteNonQuery();
-                }
-
-                Console.WriteLine("Creating table: " + tableName);
-                var sb = new StringBuilder();
-                sb.Append(@"CREATE TABLE '");
-                sb.Append(tableName);
-                sb.Append("' (");
-
-                sb.Append(@"'id' INTEGER NOT NULL PRIMARY KEY,");
-                sb.Append(@"'message' TEXT);");
-
-                using (var cmd = new SQLiteCommand(sb.ToString(), con))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                // Actually insert our data
-                sb.Clear();
-                sb.Append(@"INSERT INTO '");
-                sb.Append(tableName);
-                sb.Append(@"' (id, message) VALUES($id, $message);");
-
-                using (var transaction = con.BeginTransaction())
-                using (var cmd = new SQLiteCommand(sb.ToString(), con))
-                {
-                    var idParam = cmd.CreateParameter();
-                    idParam.ParameterName = @"$id";
-                    cmd.Parameters.Add(idParam);
-
-                    var msgParam = cmd.CreateParameter();
-                    msgParam.IsNullable = true;
-                    msgParam.ParameterName = @"$message";
-                    cmd.Parameters.Add(msgParam);
-
-                    foreach (FMG.Entry entry in msgFile.Entries)
-                    {
-                        idParam.Value = entry.ID;
-                        msgParam.Value = entry.Text;
-
-                        cmd.ExecuteNonQuery();
-                    }
-                    transaction.Commit();
                 }
             }
         }
 
-        public void LoadMessages(IList<string> messageFilepaths)
+        public static void LoadMessages(SQLiteConnection con, IList<string> messageDirs)
         {
+
+            List<string> messageFilepaths = new List<string>();
+            foreach (var messageDir in messageDirs)
+            {
+                messageFilepaths.AddRange(Directory.GetFiles(messageDir, "*.parambnd.dcx"));
+            }
+
             //var messages = new Dictionary<string, PARAM>();
             foreach (string messageFilepath in messageFilepaths)
             {
+                Console.WriteLine("Loading file: " + messageFilepath);
+
                 var msgbnd = BND3.Read(messageFilepath);
                 foreach (BinderFile file in msgbnd.Files)
                 {
@@ -135,7 +120,7 @@ namespace ParamNexusDB
 
                     // Yes, .msgbnd file is FMG
                     FMG msg = FMG.Read(file.Bytes);
-                    ReadMessagesIntoDatabase(name, msg);
+                    ReadMessagesIntoDatabase(con, name, msg);
                 }
             }
         }
