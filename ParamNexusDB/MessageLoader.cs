@@ -50,17 +50,11 @@ namespace ParamNexusDB
 
         private readonly string conStr;
 
-        // TODO make these parameterized
-        private readonly IList<string> messageFilepath = new List<string> { @"D:\Steam\steamapps\common\DARK SOULS REMASTERED\msg\ENGLISH\item.msgbnd.dcx" };
-
-
         public MessageLoader(string conStr)
         {
             // If we don't do this, shift-jis won't work.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             this.conStr = conStr;
-
-            LoadMessages(messageFilepath);
         }
 
         /// <summary>
@@ -76,9 +70,6 @@ namespace ParamNexusDB
         private void ReadMessagesIntoDatabase(string filename, FMG msgFile)
         {
             var tableName = DesMsgFileNamesToEnglish.TryGetValue(Path.GetFileNameWithoutExtension(filename), out string value) ? value : Path.GetFileNameWithoutExtension(filename);
-            //var tableName = DesMsgFileNamesToEnglish[Path.GetFileNameWithoutExtension(filename)];
-            Console.WriteLine();
-
             Console.WriteLine("Dropping table: " + tableName);
 
             using (var con = GetConnection())
@@ -104,7 +95,6 @@ namespace ParamNexusDB
                 }
 
                 // Actually insert our data
-                // Yes, we could merge some of these loops. But this is small data, so I don't care, this is clearer.
                 sb.Clear();
                 sb.Append(@"INSERT INTO '");
                 sb.Append(tableName);
@@ -113,7 +103,6 @@ namespace ParamNexusDB
                 using (var transaction = con.BeginTransaction())
                 using (var cmd = new SQLiteCommand(sb.ToString(), con))
                 {
-                    //    var fieldDict = new Dictionary<String, SQLiteParameter>();
                     var idParam = cmd.CreateParameter();
                     idParam.ParameterName = @"$id";
                     cmd.Parameters.Add(idParam);
@@ -137,12 +126,10 @@ namespace ParamNexusDB
 
         public void LoadMessages(IList<string> messageFilePaths)
         {
-            var messages = new Dictionary<string, PARAM>();
+            //var messages = new Dictionary<string, PARAM>();
             var msgbnd = BND3.Read(messageFilePaths[0]);
             foreach (BinderFile file in msgbnd.Files)
             {
-                string name = System.IO.Path.GetFileNameWithoutExtension(file.Name);
-
                 // Yes, .msgbnd file is FMG
                 FMG msg = FMG.Read(file.Bytes);
                 ReadMessagesIntoDatabase(file.Name, msg);

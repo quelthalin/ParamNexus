@@ -12,16 +12,12 @@ namespace ParamNexusDB
     public class ParamWriter
     {
         private readonly string conStr;
-        private readonly string baseDir;
 
-        public ParamWriter(string conStr, string baseDir)
+        public ParamWriter(string conStr)
         {
             // If we don't do this, shift-jis won't work.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             this.conStr = conStr;
-            this.baseDir = baseDir;
-
-            WriteGameParams();
         }
 
         /// <summary>
@@ -34,7 +30,7 @@ namespace ParamNexusDB
             return con;
         }
 
-        public void WriteGameParams()
+        public void WriteGameParams(string outputPath, bool overwriteOutputFiles)
         {
             // Writing a parambnd
             // Need to construct our BND3 files based on what's in our DB.
@@ -65,7 +61,7 @@ namespace ParamNexusDB
                 }
 
                 // Get our list of files. We'll grab the contents afterwards.
-                // Note that it's a List because 
+                // Note that it's a List because there can be multiple files associated with a given ParamType.
                 var files = new Dictionary<string, List<BinderFile>>();
                 using (var cmd = new SQLiteCommand(@"SELECT * FROM 'bnd_contents'", con))
                 {
@@ -272,10 +268,19 @@ namespace ParamNexusDB
 
                 foreach (KeyValuePair<string, BND3> entry in bnds)
                 {
-                    Console.WriteLine("Output current parambnd.dcx: " + entry.Key);
-                    //entry.Value.Write(@"D:\downloads\DeS_Files\" + entry.Key);
-                    entry.Value.Write(@"D:\downloads\DS_Files\" + entry.Key);
-                    //var parambnd = BND3.Read(@"D:\downloads\ps3-disc-dumper_win64_3.0.5\Demon's Souls [BLUS30443]\PS3_GAME\USRDIR\param\gameparam\gameparamna.parambnd.dcx");
+                    var outputFile = outputPath + Path.DirectorySeparatorChar + entry.Key;
+                    Console.WriteLine("Output current parambnd.dcx: " + outputFile);
+                    if(!File.Exists(outputFile) || overwriteOutputFiles)
+                    {
+                        entry.Value.Write(outputFile);
+                    } else
+                    {
+                        // Backup the eisting file before writing.
+                        // Just append the unix time and ".bak" to avoid managing whole sets of backup nonsense.
+                        var unixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        File.Move(outputFile, outputFile + "." + unixTime + ".bak");
+                        entry.Value.Write(outputFile);
+                    }
                 }
             }
         }
