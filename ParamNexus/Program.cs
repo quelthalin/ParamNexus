@@ -1,7 +1,5 @@
 ﻿using ParamNexusDB;
 using System;
-using System.Collections.Generic;
-using System.Numerics;
 using System.IO;
 using System.Linq;
 
@@ -57,7 +55,7 @@ namespace ParamNexus
 
                 if (messageLocations != null)
                 {
-                    var messageLocsList = paramLocations.Split(',').ToList();
+                    var messageLocsList = messageLocations.Split(',').ToList();
                     foreach (string messageLoc in messageLocsList)
                     {
                         ValidateProperPath("--message-locations", messageLoc);
@@ -65,7 +63,8 @@ namespace ParamNexus
                     MessageLoader ml = new MessageLoader(dataSource);
                     ml.LoadMessages(messageLocsList);
                 }
-            } else
+            }
+            else
             {
                 Console.WriteLine("Using existing database");
             }

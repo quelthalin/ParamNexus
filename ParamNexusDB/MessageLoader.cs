@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SQLite;
 using System.IO;
 using System.Text;
@@ -67,9 +66,9 @@ namespace ParamNexusDB
             return con;
         }
 
-        private void ReadMessagesIntoDatabase(string filename, FMG msgFile)
+        private void ReadMessagesIntoDatabase(string name, FMG msgFile)
         {
-            var tableName = DesMsgFileNamesToEnglish.TryGetValue(Path.GetFileNameWithoutExtension(filename), out string value) ? value : Path.GetFileNameWithoutExtension(filename);
+            var tableName = DesMsgFileNamesToEnglish.TryGetValue(name, out string value) ? value : name;
             Console.WriteLine("Dropping table: " + tableName);
 
             using (var con = GetConnection())
@@ -124,15 +123,20 @@ namespace ParamNexusDB
             }
         }
 
-        public void LoadMessages(IList<string> messageFilePaths)
+        public void LoadMessages(IList<string> messageFilepaths)
         {
             //var messages = new Dictionary<string, PARAM>();
-            var msgbnd = BND3.Read(messageFilePaths[0]);
-            foreach (BinderFile file in msgbnd.Files)
+            foreach (string messageFilepath in messageFilepaths)
             {
-                // Yes, .msgbnd file is FMG
-                FMG msg = FMG.Read(file.Bytes);
-                ReadMessagesIntoDatabase(file.Name, msg);
+                var msgbnd = BND3.Read(messageFilepath);
+                foreach (BinderFile file in msgbnd.Files)
+                {
+                    string name = Path.GetFileNameWithoutExtension(file.Name);
+
+                    // Yes, .msgbnd file is FMG
+                    FMG msg = FMG.Read(file.Bytes);
+                    ReadMessagesIntoDatabase(name, msg);
+                }
             }
         }
     }

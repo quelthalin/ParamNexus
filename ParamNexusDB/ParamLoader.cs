@@ -74,10 +74,6 @@ namespace ParamNexusDB
             foreach (var paramFilepath in paramFilePaths)
             {
                 var parambnd = BND3.Read(paramFilepath);
-                //parambnd.Write(@"D:\downloads\DeS_Files\" + Path.GetFileName(paramFilepath) + ".old.dcx");
-                //parambnd.Write(@"D:\downloads\DS_Files\" + Path.GetFileName(paramFilepath) + ".old.dcx");
-
-
                 foreach (BinderFile file in parambnd.Files)
                 {
                     PARAM param = PARAM.Read(file.Bytes);
