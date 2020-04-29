@@ -50,15 +50,9 @@ namespace ParamNexusDB
         private static void ReadMessagesIntoDatabase(SQLiteConnection con, string name, FMG msgFile)
         {
             var tableName = DesMsgFileNamesToEnglish.TryGetValue(name, out string value) ? value : name;
-            Console.WriteLine("Dropping table: " + tableName);
 
-
-            using (var cmd = new SQLiteCommand("DROP TABLE IF EXISTS " + tableName, con))
-            {
-                cmd.ExecuteNonQuery();
-            }
-
-            Console.WriteLine("Creating table: " + tableName);
+            // Create the table to write into
+            //Console.WriteLine("Creating table: " + tableName);
             var sb = new StringBuilder();
             sb.Append(@"CREATE TABLE '");
             sb.Append(tableName);
@@ -99,14 +93,11 @@ namespace ParamNexusDB
             }
         }
 
-        public static void LoadMessages(SQLiteConnection con, IList<string> messageDirs)
+        public static void LoadMessages(SQLiteConnection con, string messageDir)
         {
 
             List<string> messageFilepaths = new List<string>();
-            foreach (var messageDir in messageDirs)
-            {
-                messageFilepaths.AddRange(Directory.GetFiles(messageDir, "*.parambnd.dcx"));
-            }
+            messageFilepaths.AddRange(Directory.GetFiles(messageDir, "*.msgbnd.dcx"));
 
             //var messages = new Dictionary<string, PARAM>();
             foreach (string messageFilepath in messageFilepaths)

@@ -83,7 +83,8 @@ namespace ParamNexusDB
 
                 Console.WriteLine("Using filter pattern: " + filterPattern);
                 paramFilepaths.AddRange(Directory.GetFiles(paramDir, filterPattern));
-                Console.WriteLine("ParamFilepaths: " + String.Join(",", paramFilepaths));
+                Console.WriteLine("ParamFilepaths: ");
+                Console.WriteLine("\t" + String.Join("\n\t", paramFilepaths));
             }
 
             foreach (var paramFilepath in paramFilepaths)
@@ -106,11 +107,11 @@ namespace ParamNexusDB
                 ReadBndTableOfContentsIntoDatabase(con, Path.GetFileName(paramFilepath), bndContents);
             }
         }
-        
+
         private static void CreateBndMetadataTables(SQLiteConnection con)
         {
             Console.WriteLine(@"Creating table 'bnd_metadata'");
-            var createTable = @"CREATE TABLE IF NOT EXISTS 'bnd_metadata'
+            var createTable = @"CREATE TABLE 'bnd_metadata'
                 ('filename' TEXT,
                  'BigEndian' BOOLEAN,
                  'BitBigEndian' BOOLEAN,
@@ -143,7 +144,7 @@ namespace ParamNexusDB
                 AddParamToCommand(cmd, @"$Unk18", bnd.Unk18);
                 AddParamToCommand(cmd, @"$Version", bnd.Version);
 
-                Console.WriteLine("TEXT: " + cmd.CommandText);
+                //Console.WriteLine("TEXT: " + cmd.CommandText);
                 cmd.ExecuteNonQuery();
             }
         }
@@ -151,7 +152,7 @@ namespace ParamNexusDB
         private static void CreateParamMetadataTables(SQLiteConnection con)
         {
             Console.WriteLine("Creating table: param_metadata");
-            var createTable = @"CREATE TABLE IF NOT EXISTS 'param_metadata' 
+            var createTable = @"CREATE TABLE 'param_metadata' 
                 (
                  'ParamType' TEXT NOT NULL PRIMARY KEY,
                  'BigEndian' BOOLEAN,
@@ -169,8 +170,6 @@ namespace ParamNexusDB
         }
         private static void ReadParamIntoDatabase(SQLiteConnection con, string tableName, PARAM paramFile)
         {
-            Console.WriteLine();
-
             var insert = @"INSERT OR IGNORE INTO 'param_metadata'
                 ('ParamType', 'BigEndian', 'Compression', 'Format2D', 'Format2E', 'Format2F', 'Unk06', 'Unk08')
                 VALUES ($ParamType, $BigEndian, $Compression, $Format2D, $Format2E, $Format2F, $Unk06, $Unk08)";
@@ -187,9 +186,22 @@ namespace ParamNexusDB
                 cmd.ExecuteNonQuery();
             }
 
-            Console.WriteLine("Creating table: " + tableName);
+            // Need to check if table already exists. For example, DeS EquipParamWeapon exists in both gameparamna
+            // and default_drawparam.
+            var tableExistsCmd = @"SELECT name FROM sqlite_master WHERE type='table' AND name='" + tableName + "';";
+            using (var cmd = new SQLiteCommand(tableExistsCmd, con))
+            {
+                var result = cmd.ExecuteScalar();
+                if (result != null)
+                {
+                    //Console.WriteLine("Already loaded " + tableName + ". Ignoring");
+                    return;
+                }
+            }
+
+            //Console.WriteLine("Creating table: " + tableName);
             var sb = new StringBuilder();
-            sb.Append(@"CREATE TABLE IF NOT EXISTS'");
+            sb.Append(@"CREATE TABLE '");
             sb.Append(tableName);
             sb.Append("' (");
             sb.Append(@"'id' INTEGER NOT NULL,"); // Shockingly, not always a primary key, e.g. DeS default_AiStandardInfoBank
@@ -296,7 +308,7 @@ namespace ParamNexusDB
         private static void CreateBndTableOfContentsTable(SQLiteConnection con)
         {
             Console.WriteLine(@"Creating table 'bnd_contents'");
-            var createTable = @"CREATE TABLE IF NOT EXISTS 'bnd_contents'
+            var createTable = @"CREATE TABLE 'bnd_contents'
                 (
                  'source_file' TEXT NOT NULL,
                  'file_id' INTEGER NOT NULL,
@@ -313,11 +325,11 @@ namespace ParamNexusDB
 
         private static void ReadBndTableOfContentsIntoDatabase(SQLiteConnection con, string filename, List<BndContentsEntry> bndContents)
         {
+            Console.WriteLine("Writing bnd_contents for: " + filename);
             var insert = @"INSERT INTO 'bnd_contents'
                 ('source_file', 'file_id', 'Name', 'Flags', 'CompressionType', 'ParamType')
                 VALUES ($source_file, $file_id, $Name, $Flags, $CompressionType, $ParamType)";
 
-            using (var transaction = con.BeginTransaction())
             using (var cmd = new SQLiteCommand(insert, con))
             {
                 foreach (BndContentsEntry entry in bndContents)
@@ -328,10 +340,11 @@ namespace ParamNexusDB
                     AddParamToCommand(cmd, @"$Flags", entry.Flags);
                     AddParamToCommand(cmd, @"$CompressionType", entry.CompressionType.ToString());
                     AddParamToCommand(cmd, @"$ParamType", entry.ParamType);
-
+                    
+                    Console.WriteLine("TEXT: " + cmd.CommandText);
+                    Console.WriteLine("\t" + filename);
                     cmd.ExecuteNonQuery();
                 }
-                transaction.Commit();
             }
         }
 
@@ -387,7 +400,6 @@ namespace ParamNexusDB
                         $Default, $Description, $EditFlags, $Increment, $Maximum,
                         $Minimum, $DisplayFormat, $DisplayName, $DisplayType, $SortID)";
 
-            using (var transaction = con.BeginTransaction())
             using (var cmd = new SQLiteCommand(insertParamdef, con))
             using (var fieldsCmd = new SQLiteCommand(insertFields, con))
             {
@@ -423,7 +435,6 @@ namespace ParamNexusDB
                         fieldsCmd.ExecuteNonQuery();
                     }
                 }
-                transaction.Commit();
             }
         }
 

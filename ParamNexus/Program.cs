@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Collections.Generic;
 
 namespace ParamNexus
 {
@@ -17,19 +18,19 @@ namespace ParamNexus
                 new Option<string>(
                     "--paramdef-location",
                     "The path to the paramdef file to be loaded. Use the DCX file, e.g. 'paramdef.paramdefbnd.dcx'"
-                    ),
-                new Option<string>(
+                ),
+                new Option<string[]>(
                     "--param-locations",
                     "Comma-separated list of paths containing param files to load. Anything '*.parambnd.dcx' will be loaded."
-                ),
+                ) { Argument = new Argument<string[]>() },
                 new Option<string>(
-                    "--message-locations",
-                    "Comma-separated list of paths containing message files to load. Anything '*.msgbnd.dcx' will be loaded."
+                    "--message-location",
+                    "Path containing message files to load. Anything '*.msgbnd.dcx' will be loaded."
                 ),
                 new Option<string>(
                     "--db-location",
-                    description: "The path to the database file to be used. If it doesn't exist, it will be created."
-                )
+                    "The path to the database file to be used. If it doesn't exist, it will be created."
+                ) { Argument = new Argument<string>() { Arity = ArgumentArity.ExactlyOne }}
             };
 
             var exportCmd = new Command("export")
@@ -40,30 +41,31 @@ namespace ParamNexus
                 ),
                 new Option<bool>(
                     "--overwrite-output-files",
-                    "If true, overwrite file if present. If false, rename the old file as 'filename.<unix_timestamp>.bak' before writing. Default false."
-                ),
+                    description: "If true, overwrite file if present. If false, rename the old file as 'filename.<unix_timestamp>.bak' before writing. Default false."
+                )
+                {
+                    Argument = new Argument<bool>(() => false)
+                },
                 new Option<string>(
                     "--db-location",
-                    description: "The path to the database file to be used. If it doesn't exist, it will be created."
-                )
+                    "The path to the database file to be used. If it doesn't exist, it will be created."
+                ) { Argument = new Argument<string>() { Arity = ArgumentArity.ExactlyOne }}
             };
 
             rootCommand.AddCommand(importCmd);
             rootCommand.AddCommand(exportCmd);
 
-            importCmd.Handler = CommandHandler.Create<string, string, string, string>(
-                (paramdefLocation, paramLocations, messageLocations, dbLocation) =>
+            importCmd.Handler = CommandHandler.Create<string, IEnumerable<string>, string, string>(
+                (paramdefLocation, paramLocations, messageLocation, dbLocation) =>
             {
                 Console.WriteLine($"The value for --paramdef-location is: {paramdefLocation}");
-                Console.WriteLine($"The value for --param-locations is: {paramLocations}");
-                Console.WriteLine($"The value for --message-locations is: {messageLocations}");
+                Console.WriteLine($"The value for --param-locations is: " + String.Join(",", paramLocations));
+                Console.WriteLine($"The value for --message-location is: {messageLocation}");
                 Console.WriteLine($"The value for --db-location is: {dbLocation}");
 
-                var paramLocsList = paramLocations.Split(',').ToList();
-                var messageLocsList = messageLocations.Split(',').ToList();
-                Console.WriteLine("Message list is " + String.Join(",", messageLocsList));
+                var paramLocsList = paramLocations.ToList();
                 ParamDatabase pd = new ParamDatabase(dbLocation);
-                pd.LoadDatabase(paramdefLocation, paramLocsList, messageLocsList);
+                pd.LoadDatabase(paramdefLocation, paramLocsList, messageLocation);
             });
 
             exportCmd.Handler = CommandHandler.Create<string, bool, string>(

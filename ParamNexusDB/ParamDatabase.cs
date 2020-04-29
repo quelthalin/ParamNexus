@@ -16,7 +16,7 @@ namespace ParamNexusDB
             DbLocation = dbLocation;
         }
 
-        public void LoadDatabase(string paramdefLocation, List<string> paramDirs, List<string> messageDirs)
+        public void LoadDatabase(string paramdefLocation, List<string> paramDirs, string messageDir)
         {
             using (var con = GetConnection())
             {
@@ -32,16 +32,12 @@ namespace ParamNexusDB
                         // Only load the data we're told to load.
                         if (paramdefLocation != null && paramDirs != null)
                         {
-                            //var paramLocsList = paramLocations.Split(',').ToList();
-
                             ParamLoader.LoadParams(con, paramdefLocation, paramDirs);
                         }
 
-                        if (messageDirs != null)
+                        if (messageDir != null)
                         {
-                            //var messageLocsList = messageLocations.Split(',').ToList();
-                            //MessageLoader ml = new MessageLoader(dataSource);
-                            MessageLoader.LoadMessages(con, messageDirs);
+                            MessageLoader.LoadMessages(con, messageDir);
                         }
                     }
                     transaction.Commit();
