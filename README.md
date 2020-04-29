@@ -125,4 +125,4 @@ export --db-location "<db_dir>\DeS.db" --overwrite-output-files false --output-f
 * Clean up C# sins. I don't know what they are yet, but I'm sure I committed them.
 * ~Backup files if they'll be overwritten.~ Files will be written in the form `<original-name>.<unix-timestamp.bak`. Optionally can force overwrite.
 * Make an dead simple way for users to load data, not just CLI. Suggestions were .bat or drag-and-drop (and maybe just load supported files?)
-~* Clean up the CLI help for subcommands.~
+* ~Clean up the CLI help for subcommands.~
