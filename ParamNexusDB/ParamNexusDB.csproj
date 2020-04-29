@@ -4,11 +4,11 @@
 	<TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
     <OutputType>Library</OutputType>
     <Platforms>AnyCPU;x64</Platforms>
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompareNETObjects" Version="4.66.0" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.112" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.112.2" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="4.7.0" />
   </ItemGroup>
 

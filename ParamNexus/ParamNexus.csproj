@@ -4,10 +4,11 @@
     <OutputType>Exe</OutputType>
 	<TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
 	<Platforms>AnyCPU;x64</Platforms>
+	<Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CommandLine.DragonFruit" Version="2.0.0-beta1.20074.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20225.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.112.2" />
   </ItemGroup>
 

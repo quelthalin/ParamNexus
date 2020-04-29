@@ -9,11 +9,11 @@ namespace ParamNexus
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             var rootCommand = new RootCommand();
 
-            var importCmd = new Command("import")
+            var importCmd = new Command("import", "Imports the provided paramfiles and localizations into a SQLite database")
             {
                 new Option<string>(
                     "--paramdef-location",
@@ -22,7 +22,7 @@ namespace ParamNexus
                 new Option<string[]>(
                     "--param-locations",
                     "Comma-separated list of paths containing param files to load. Anything '*.parambnd.dcx' will be loaded."
-                ) { Argument = new Argument<string[]>() },
+                ),
                 new Option<string>(
                     "--message-location",
                     "Path containing message files to load. Anything '*.msgbnd.dcx' will be loaded."
@@ -30,10 +30,10 @@ namespace ParamNexus
                 new Option<string>(
                     "--db-location",
                     "The path to the database file to be used. If it doesn't exist, it will be created."
-                ) { Argument = new Argument<string>() { Arity = ArgumentArity.ExactlyOne }}
+                )
             };
 
-            var exportCmd = new Command("export")
+            var exportCmd = new Command("export", "Exports the provided database back to param files")
             {
                 new Option<string>(
                     "--output-files-dir",
@@ -41,45 +41,79 @@ namespace ParamNexus
                 ),
                 new Option<bool>(
                     "--overwrite-output-files",
-                    description: "If true, overwrite file if present. If false, rename the old file as 'filename.<unix_timestamp>.bak' before writing. Default false."
+                    "If true, overwrite file if present. If false, rename the old file as 'filename.<unix_timestamp>.bak' before writing. Default false."
                 )
-                {
-                    Argument = new Argument<bool>(() => false)
-                },
+                { Argument = new Argument<bool>(() => false)},
                 new Option<string>(
                     "--db-location",
-                    "The path to the database file to be used. If it doesn't exist, it will be created."
-                ) { Argument = new Argument<string>() { Arity = ArgumentArity.ExactlyOne }}
+                    "The path to the database file to be used."
+                )
             };
-
-            rootCommand.AddCommand(importCmd);
-            rootCommand.AddCommand(exportCmd);
 
             importCmd.Handler = CommandHandler.Create<string, IEnumerable<string>, string, string>(
                 (paramdefLocation, paramLocations, messageLocation, dbLocation) =>
             {
-                Console.WriteLine($"The value for --paramdef-location is: {paramdefLocation}");
-                Console.WriteLine($"The value for --param-locations is: " + String.Join(",", paramLocations));
-                Console.WriteLine($"The value for --message-location is: {messageLocation}");
-                Console.WriteLine($"The value for --db-location is: {dbLocation}");
+                bool valid = true;
+                if (String.IsNullOrEmpty(dbLocation))
+                {
+                    Console.WriteLine("Required option --db-location missing");
+                    valid = false;
+                }
+                if(String.IsNullOrEmpty(paramdefLocation))
+                {
+                    Console.WriteLine("Required option --paramdef-location missing");
+                    valid = false;
+                }
+                if (!paramLocations?.Any() ?? false)
+                {
+                    Console.WriteLine("Required option --param-locations missing");
+                    valid = false;
+                }
+                if(String.IsNullOrEmpty(messageLocation))
+                {
+                    Console.WriteLine("No --message-location is provided. Localizations will not be loaded.");
+                    valid = false;
+                }
 
-                var paramLocsList = paramLocations.ToList();
-                ParamDatabase pd = new ParamDatabase(dbLocation);
-                pd.LoadDatabase(paramdefLocation, paramLocsList, messageLocation);
+                //Console.WriteLine($"The value for --paramdef-location is: {paramdefLocation}");
+                //Console.WriteLine($"The value for --param-locations is: " + String.Join(",", paramLocations));
+                //Console.WriteLine($"The value for --message-location is: {messageLocation}");
+                //Console.WriteLine($"The value for --db-location is: {dbLocation}");
+
+
+                if (valid)
+                {
+                    var paramLocsList = paramLocations.ToList();
+                    ParamDatabase pd = new ParamDatabase(dbLocation);
+                    pd.LoadDatabase(paramdefLocation, paramLocsList, messageLocation);
+                }
             });
 
             exportCmd.Handler = CommandHandler.Create<string, bool, string>(
             (outputFilesDir, overwriteOutputFiles, dbLocation) =>
             {
-                Console.WriteLine($"The value for --output-files-dir is: {outputFilesDir}");
-                Console.WriteLine($"The value for --overwrite-output-files is: {overwriteOutputFiles}");
-                Console.WriteLine($"The value for --db-location is: {dbLocation}");
+                bool valid = true;
+                if (String.IsNullOrEmpty(dbLocation))
+                {
+                    Console.WriteLine("Required option --db-location missing");
+                    valid = false;
+                }
 
-                ParamDatabase pd = new ParamDatabase(dbLocation);
-                pd.ExportDatabase(outputFilesDir, overwriteOutputFiles);
+                //Console.WriteLine($"The value for --output-files-dir is: {outputFilesDir}");
+                //Console.WriteLine($"The value for --overwrite-output-files is: {overwriteOutputFiles}");
+                //Console.WriteLine($"The value for --db-location is: {dbLocation}");
+
+                if (valid)
+                {
+                    ParamDatabase pd = new ParamDatabase(dbLocation);
+                    pd.ExportDatabase(outputFilesDir, overwriteOutputFiles);
+                }
             });
 
-            rootCommand.InvokeAsync(args).Wait();
+            rootCommand.AddCommand(importCmd);
+            rootCommand.AddCommand(exportCmd);
+
+            return rootCommand.InvokeAsync(args).Result;
         }
     }
 }

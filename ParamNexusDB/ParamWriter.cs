@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
-using System.Text;
 using SoulsFormats;
 using static SoulsFormats.PARAMDEF;
 
@@ -25,12 +24,12 @@ namespace ParamNexusDB
                 {
                     var bnd = new BND3
                     {
-                        BigEndian = reader.GetBoolean(reader.GetOrdinal(@"BigEndian")),
-                        BitBigEndian = reader.GetBoolean(reader.GetOrdinal(@"BitBigEndian")),
-                        Compression = (DCX.Type)Enum.Parse(typeof(DCX.Type), reader.GetString(reader.GetOrdinal(@"Compression"))),
-                        Format = (Binder.Format)reader.GetInt64(reader.GetOrdinal(@"Format")),
-                        Unk18 = reader.GetInt32(reader.GetOrdinal(@"Unk18")),
-                        Version = reader.GetString(reader.GetOrdinal(@"Version")),
+                        BigEndian = reader.GetBoolean(reader.GetOrdinal(@"big_endian")),
+                        BitBigEndian = reader.GetBoolean(reader.GetOrdinal(@"bit_big_endian")),
+                        Compression = (DCX.Type)Enum.Parse(typeof(DCX.Type), reader.GetString(reader.GetOrdinal(@"compression"))),
+                        Format = (Binder.Format)reader.GetInt64(reader.GetOrdinal(@"format")),
+                        Unk18 = reader.GetInt32(reader.GetOrdinal(@"unk18")),
+                        Version = reader.GetString(reader.GetOrdinal(@"version")),
                         Files = new List<BinderFile>()
                     };
                     var filename = reader.GetString(reader.GetOrdinal(@"filename"));
@@ -50,12 +49,12 @@ namespace ParamNexusDB
                     var file = new BinderFile
                     {
                         ID = reader.GetInt32(reader.GetOrdinal(@"file_id")),
-                        Name = reader.GetString(reader.GetOrdinal(@"Name")),
-                        Flags = (Binder.FileFlags)reader.GetInt64(reader.GetOrdinal(@"Flags")),
-                        CompressionType = (DCX.Type)System.Enum.Parse(typeof(DCX.Type), reader.GetString(reader.GetOrdinal(@"CompressionType")))
+                        Name = reader.GetString(reader.GetOrdinal(@"name")),
+                        Flags = (Binder.FileFlags)reader.GetInt64(reader.GetOrdinal(@"flags")),
+                        CompressionType = (DCX.Type)System.Enum.Parse(typeof(DCX.Type), reader.GetString(reader.GetOrdinal(@"compression_type")))
                     };
 
-                    var paramType = reader.GetString(reader.GetOrdinal("ParamType"));
+                    var paramType = reader.GetString(reader.GetOrdinal("param_type"));
 
                     // Add the file to both our list of files in the appropriate BND and also to our dictionary
                     // so that we can continue building it out.
@@ -77,52 +76,52 @@ namespace ParamNexusDB
             // Get all of our PARAMDEFs
             Dictionary<string, PARAMDEF> paramTypeToParamDef = new Dictionary<string, PARAMDEF>();
             using (var cmd = new SQLiteCommand(@"SELECT * FROM 'paramdef_metadata';", con))
-            using (var fieldsCmd = new SQLiteCommand(@"SELECT * FROM 'paramdef_fields' WHERE ParamType=$ParamType;", con))
+            using (var fieldsCmd = new SQLiteCommand(@"SELECT * FROM 'paramdef_fields' WHERE param_type=$param_type;", con))
             {
                 var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
                     PARAMDEF paramdef = new PARAMDEF
                     {
-                        BigEndian = reader.GetBoolean(reader.GetOrdinal(@"BigEndian")),
-                        Compression = (DCX.Type)Enum.Parse(typeof(DCX.Type), reader.GetString(reader.GetOrdinal(@"Compression"))),
-                        ParamType = reader.GetString(reader.GetOrdinal(@"ParamType")),
-                        Unicode = reader.GetBoolean(reader.GetOrdinal(@"Unicode")),
-                        Unk06 = reader.GetInt16(reader.GetOrdinal(@"Unk06")),
-                        Version = reader.GetInt16(reader.GetOrdinal(@"Version"))
+                        BigEndian = reader.GetBoolean(reader.GetOrdinal(@"big_endian")),
+                        Compression = (DCX.Type)Enum.Parse(typeof(DCX.Type), reader.GetString(reader.GetOrdinal(@"compression"))),
+                        ParamType = reader.GetString(reader.GetOrdinal(@"param_type")),
+                        Unicode = reader.GetBoolean(reader.GetOrdinal(@"unicode")),
+                        Unk06 = reader.GetInt16(reader.GetOrdinal(@"unk06")),
+                        Version = reader.GetInt16(reader.GetOrdinal(@"version"))
                     };
                     paramTypeToParamDef.Add(paramdef.ParamType, paramdef);
                 }
             }
 
-            using (var cmd = new SQLiteCommand(@"SELECT * FROM 'paramdef_fields' WHERE ParamType=$ParamType;", con))
+            using (var cmd = new SQLiteCommand(@"SELECT * FROM 'paramdef_fields' WHERE param_type=$param_type;", con))
             {
                 foreach (KeyValuePair<string, PARAMDEF> keyValue in paramTypeToParamDef)
                 {
                     // Get all the fields for our paramdef
-                    AddParamToCommand(cmd, @"$ParamType", keyValue.Key);
+                    AddParamToCommand(cmd, @"$param_type", keyValue.Key);
                     var fieldReader = cmd.ExecuteReader();
                     var fields = new List<Field>();
                     while (fieldReader.Read())
                     {
-                        var descOrdinal = fieldReader.GetOrdinal(@"Description");
+                        var descOrdinal = fieldReader.GetOrdinal(@"description");
                         var field = new Field
                         {
-                            ArrayLength = fieldReader.GetInt32(fieldReader.GetOrdinal(@"ArrayLength")),
-                            BitSize = fieldReader.GetInt32(fieldReader.GetOrdinal(@"BitSize")),
-                            Default = fieldReader.GetFloat(fieldReader.GetOrdinal(@"Default")),
+                            ArrayLength = fieldReader.GetInt32(fieldReader.GetOrdinal(@"array_length")),
+                            BitSize = fieldReader.GetInt32(fieldReader.GetOrdinal(@"bit_size")),
+                            Default = fieldReader.GetFloat(fieldReader.GetOrdinal(@"default")),
                             // Description can be NULL. Need to check. Sigh.
                             Description = fieldReader.IsDBNull(descOrdinal) ? null : fieldReader.GetFieldValue<string>(descOrdinal),
-                            DisplayFormat = fieldReader.GetString(fieldReader.GetOrdinal(@"DisplayFormat")),
-                            DisplayName = fieldReader.GetString(fieldReader.GetOrdinal(@"DisplayName")),
-                            DisplayType = (DefType)System.Enum.Parse(typeof(DefType), fieldReader.GetString(fieldReader.GetOrdinal(@"DisplayType"))),
-                            EditFlags = (EditFlags)fieldReader.GetInt64(fieldReader.GetOrdinal(@"EditFlags")),
-                            Increment = fieldReader.GetFloat(fieldReader.GetOrdinal(@"Increment")),
-                            InternalName = fieldReader.GetString(fieldReader.GetOrdinal(@"InternalName")),
-                            InternalType = fieldReader.GetString(fieldReader.GetOrdinal(@"InternalType")),
-                            Maximum = fieldReader.GetFloat(fieldReader.GetOrdinal(@"Maximum")),
-                            Minimum = fieldReader.GetFloat(fieldReader.GetOrdinal(@"Minimum")),
-                            SortID = fieldReader.GetInt32(fieldReader.GetOrdinal(@"SortID"))
+                            DisplayFormat = fieldReader.GetString(fieldReader.GetOrdinal(@"display_format")),
+                            DisplayName = fieldReader.GetString(fieldReader.GetOrdinal(@"display_name")),
+                            DisplayType = (DefType)System.Enum.Parse(typeof(DefType), fieldReader.GetString(fieldReader.GetOrdinal(@"display_type"))),
+                            EditFlags = (EditFlags)fieldReader.GetInt64(fieldReader.GetOrdinal(@"edit_flags")),
+                            Increment = fieldReader.GetFloat(fieldReader.GetOrdinal(@"increment")),
+                            InternalName = fieldReader.GetString(fieldReader.GetOrdinal(@"internal_name")),
+                            InternalType = fieldReader.GetString(fieldReader.GetOrdinal(@"internal_type")),
+                            Maximum = fieldReader.GetFloat(fieldReader.GetOrdinal(@"maximum")),
+                            Minimum = fieldReader.GetFloat(fieldReader.GetOrdinal(@"minimum")),
+                            SortID = fieldReader.GetInt32(fieldReader.GetOrdinal(@"sort_id"))
                         };
 
                         fields.Add(field);
@@ -148,30 +147,30 @@ namespace ParamNexusDB
                     var tableName = entry.Key;
                     Console.WriteLine("Reading from: " + tableName);
                     using (var cmd = new SQLiteCommand(@"SELECT * FROM '" + tableName + "';", con))
-                    using (var metadataCmd = new SQLiteCommand(@"SELECT * FROM param_metadata WHERE ParamType = $ParamType", con))
+                    using (var metadataCmd = new SQLiteCommand(@"SELECT * FROM param_metadata WHERE param_type = $param_type", con))
                     {
 
                         var paramDef = paramTypeToParamDef[entry.Value.Key];
                         var paramFile = new PARAM();
                         paramFile.ParamType = entry.Value.Key;
 
-                        AddParamToCommand(metadataCmd, @"$ParamType", entry.Value.Key);
+                        AddParamToCommand(metadataCmd, @"$param_type", entry.Value.Key);
                         var metadataReader = metadataCmd.ExecuteReader();
                         while (metadataReader.Read())
                         {
-                            paramFile.BigEndian = metadataReader.GetBoolean(metadataReader.GetOrdinal(@"BigEndian"));
-                            paramFile.Compression = (DCX.Type)System.Enum.Parse(typeof(DCX.Type), metadataReader.GetString(metadataReader.GetOrdinal(@"Compression")));
+                            paramFile.BigEndian = metadataReader.GetBoolean(metadataReader.GetOrdinal(@"big_endian"));
+                            paramFile.Compression = (DCX.Type)System.Enum.Parse(typeof(DCX.Type), metadataReader.GetString(metadataReader.GetOrdinal(@"compression")));
                             byte[] buf = new byte[1]; // These 3 cols are all 1 byte
-                            metadataReader.GetBytes(metadataReader.GetOrdinal("Format2D"), 0, buf, 0, 1); // Can't use GetBlob
+                            metadataReader.GetBytes(metadataReader.GetOrdinal("format2D"), 0, buf, 0, 1); // Can't use GetBlob
                             paramFile.Format2D = buf[0];
                             buf = new byte[1];
-                            metadataReader.GetBytes(metadataReader.GetOrdinal("Format2E"), 0, buf, 0, 1);
+                            metadataReader.GetBytes(metadataReader.GetOrdinal("format2E"), 0, buf, 0, 1);
                             paramFile.Format2E = buf[0];
                             buf = new byte[1];
-                            metadataReader.GetBytes(metadataReader.GetOrdinal("Format2F"), 0, buf, 0, 1);
+                            metadataReader.GetBytes(metadataReader.GetOrdinal("format2F"), 0, buf, 0, 1);
                             paramFile.Format2F = buf[0];
-                            paramFile.Unk06 = metadataReader.GetInt16(metadataReader.GetOrdinal(@"Unk06"));
-                            paramFile.Unk08 = metadataReader.GetInt16(metadataReader.GetOrdinal(@"Unk08"));
+                            paramFile.Unk06 = metadataReader.GetInt16(metadataReader.GetOrdinal(@"unk06"));
+                            paramFile.Unk08 = metadataReader.GetInt16(metadataReader.GetOrdinal(@"unk08"));
                         }
 
                         var reader = cmd.ExecuteReader();
@@ -186,7 +185,7 @@ namespace ParamNexusDB
                                 id = -1;
                             }
                             // Description can be NULL
-                            var descOrdinal = reader.GetOrdinal(@"Description");
+                            var descOrdinal = reader.GetOrdinal(@"description");
                             var description = reader.IsDBNull(descOrdinal) ? null : reader.GetFieldValue<string>(descOrdinal);
                             var row = new PARAM.Row(id, description, paramDef);
                             paramFile.Rows.Add(row);
@@ -244,10 +243,8 @@ namespace ParamNexusDB
                 }
             }
 
-            Console.WriteLine("Approaching actual write");
             foreach (KeyValuePair<string, KeyValuePair<string, BND3>> entry in bnds)
             {
-                Console.WriteLine("made it to actual write");
                 // Default to writing the original file.
                 // If output path is defined, put everything there.
                 var outputFile = entry.Value.Key;

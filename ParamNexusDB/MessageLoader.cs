@@ -52,7 +52,6 @@ namespace ParamNexusDB
             var tableName = DesMsgFileNamesToEnglish.TryGetValue(name, out string value) ? value : name;
 
             // Create the table to write into
-            //Console.WriteLine("Creating table: " + tableName);
             var sb = new StringBuilder();
             sb.Append(@"CREATE TABLE '");
             sb.Append(tableName);

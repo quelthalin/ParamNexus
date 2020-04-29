@@ -81,10 +81,7 @@ namespace ParamNexusDB
                     filterPattern = "*gameparamna.parambnd.dcx";
                 }
 
-                Console.WriteLine("Using filter pattern: " + filterPattern);
                 paramFilepaths.AddRange(Directory.GetFiles(paramDir, filterPattern));
-                Console.WriteLine("ParamFilepaths: ");
-                Console.WriteLine("\t" + String.Join("\n\t", paramFilepaths));
             }
 
             foreach (var paramFilepath in paramFilepaths)
@@ -110,15 +107,14 @@ namespace ParamNexusDB
 
         private static void CreateBndMetadataTables(SQLiteConnection con)
         {
-            Console.WriteLine(@"Creating table 'bnd_metadata'");
             var createTable = @"CREATE TABLE 'bnd_metadata'
                 ('filename' TEXT,
-                 'BigEndian' BOOLEAN,
-                 'BitBigEndian' BOOLEAN,
-                 'Compression' TEXT,
-                 'Format' INTEGER,
-                 'Unk18' INTEGER,
-                 'Version' TEXT
+                 'big_endian' BOOLEAN,
+                 'bit_big_endian' BOOLEAN,
+                 'compression' TEXT,
+                 'format' INTEGER,
+                 'unk18' INTEGER,
+                 'version' TEXT
                 )";
             using (var cmd = new SQLiteCommand(createTable, con))
             {
@@ -129,39 +125,35 @@ namespace ParamNexusDB
         private static void ReadBndMetadataIntoDatabase(SQLiteConnection con, String filename, BND3 bnd)
         {
             var insert = @"INSERT INTO 'bnd_metadata'
-                ('filename', 'BigEndian', 'BitBigEndian', 'Compression', 'Format', 'Unk18', 'Version')
-                VALUES ($filename, $BigEndian, $BitBigEndian, $Compression, $Format, $Unk18, $Version)";
-
-            Console.WriteLine("Writing metadata for " + filename);
+                ('filename', 'big_endian', 'bit_big_endian', 'compression', 'format', 'unk18', 'version')
+                VALUES ($filename, $big_endian, $bit_big_endian, $compression, $format, $unk18, $version)";
 
             using (var cmd = new SQLiteCommand(insert, con))
             {
                 AddParamToCommand(cmd, @"$filename", filename);
-                AddParamToCommand(cmd, @"$BigEndian", bnd.BigEndian);
-                AddParamToCommand(cmd, @"$BitBigEndian", bnd.BitBigEndian);
-                AddParamToCommand(cmd, @"$Compression", bnd.Compression.ToString());
-                AddParamToCommand(cmd, @"$Format", bnd.Format);
-                AddParamToCommand(cmd, @"$Unk18", bnd.Unk18);
-                AddParamToCommand(cmd, @"$Version", bnd.Version);
+                AddParamToCommand(cmd, @"$big_endian", bnd.BigEndian);
+                AddParamToCommand(cmd, @"$bit_big_endian", bnd.BitBigEndian);
+                AddParamToCommand(cmd, @"$compression", bnd.Compression.ToString());
+                AddParamToCommand(cmd, @"$format", bnd.Format);
+                AddParamToCommand(cmd, @"$unk18", bnd.Unk18);
+                AddParamToCommand(cmd, @"$version", bnd.Version);
 
-                //Console.WriteLine("TEXT: " + cmd.CommandText);
                 cmd.ExecuteNonQuery();
             }
         }
 
         private static void CreateParamMetadataTables(SQLiteConnection con)
         {
-            Console.WriteLine("Creating table: param_metadata");
             var createTable = @"CREATE TABLE 'param_metadata' 
                 (
-                 'ParamType' TEXT NOT NULL PRIMARY KEY,
-                 'BigEndian' BOOLEAN,
-                 'Compression' TEXT,
-                 'Format2D' BLOB,
-                 'Format2E' BLOB,
-                 'Format2F' BLOB,
-                 'Unk06' INTEGER,
-                 'Unk08' INTEGER
+                 'param_type' TEXT NOT NULL PRIMARY KEY,
+                 'big_endian' BOOLEAN,
+                 'compression' TEXT,
+                 'format2D' BLOB,
+                 'format2E' BLOB,
+                 'format2F' BLOB,
+                 'unk06' INTEGER,
+                 'unk08' INTEGER
                 )";
             using (var cmd = new SQLiteCommand(createTable, con))
             {
@@ -171,18 +163,18 @@ namespace ParamNexusDB
         private static void ReadParamIntoDatabase(SQLiteConnection con, string tableName, PARAM paramFile)
         {
             var insert = @"INSERT OR IGNORE INTO 'param_metadata'
-                ('ParamType', 'BigEndian', 'Compression', 'Format2D', 'Format2E', 'Format2F', 'Unk06', 'Unk08')
-                VALUES ($ParamType, $BigEndian, $Compression, $Format2D, $Format2E, $Format2F, $Unk06, $Unk08)";
+                ('param_type', 'big_endian', 'compression', 'format2D', 'format2E', 'format2F', 'unk06', 'unk08')
+                VALUES ($param_type, $big_endian, $compression, $format2D, $format2E, $format2F, $unk06, $unk08)";
             using (var cmd = new SQLiteCommand(insert, con))
             {
-                AddParamToCommand(cmd, @"$ParamType", paramFile.AppliedParamdef.ParamType);
-                AddParamToCommand(cmd, @"$BigEndian", paramFile.BigEndian);
-                AddParamToCommand(cmd, @"$Compression", paramFile.Compression.ToString());
-                AddParamToCommand(cmd, @"$Format2D", new byte[] { paramFile.Format2D });
-                AddParamToCommand(cmd, @"$Format2E", new byte[] { paramFile.Format2E });
-                AddParamToCommand(cmd, @"$Format2F", new byte[] { paramFile.Format2F });
-                AddParamToCommand(cmd, @"$Unk06", paramFile.Unk06);
-                AddParamToCommand(cmd, @"$Unk08", paramFile.Unk08);
+                AddParamToCommand(cmd, @"$param_type", paramFile.AppliedParamdef.ParamType);
+                AddParamToCommand(cmd, @"$big_endian", paramFile.BigEndian);
+                AddParamToCommand(cmd, @"$compression", paramFile.Compression.ToString());
+                AddParamToCommand(cmd, @"$format2D", new byte[] { paramFile.Format2D });
+                AddParamToCommand(cmd, @"$format2E", new byte[] { paramFile.Format2E });
+                AddParamToCommand(cmd, @"$format2F", new byte[] { paramFile.Format2F });
+                AddParamToCommand(cmd, @"$unk06", paramFile.Unk06);
+                AddParamToCommand(cmd, @"$unk08", paramFile.Unk08);
                 cmd.ExecuteNonQuery();
             }
 
@@ -194,12 +186,10 @@ namespace ParamNexusDB
                 var result = cmd.ExecuteScalar();
                 if (result != null)
                 {
-                    //Console.WriteLine("Already loaded " + tableName + ". Ignoring");
                     return;
                 }
             }
 
-            //Console.WriteLine("Creating table: " + tableName);
             var sb = new StringBuilder();
             sb.Append(@"CREATE TABLE '");
             sb.Append(tableName);
@@ -236,7 +226,7 @@ namespace ParamNexusDB
 
                 sb.Append(@",");
             }
-            sb.Append(@"Description TEXT");
+            sb.Append(@"description TEXT");
             sb.Append(@");");
 
             using (var cmd = new SQLiteCommand(sb.ToString(), con))
@@ -255,7 +245,7 @@ namespace ParamNexusDB
                 sb.Append(field.InternalName);
                 sb.Append(@",");
             }
-            sb.Append(@"Description");
+            sb.Append(@"description");
             sb.Append(@") VALUES($id,");
             foreach (Field field in realFields)
             {
@@ -263,7 +253,7 @@ namespace ParamNexusDB
                 sb.Append(field.InternalName);
                 sb.Append(@",");
             }
-            sb.Append(@"$Description");
+            sb.Append(@"$description");
             sb.Append(@");");
 
             using (var cmd = new SQLiteCommand(sb.ToString(), con))
@@ -283,7 +273,7 @@ namespace ParamNexusDB
                 }
 
                 var descParam = cmd.CreateParameter();
-                descParam.ParameterName = @"$Description";
+                descParam.ParameterName = @"$description";
                 cmd.Parameters.Add(descParam);
 
                 foreach (Row row in paramFile.Rows)
@@ -307,15 +297,14 @@ namespace ParamNexusDB
 
         private static void CreateBndTableOfContentsTable(SQLiteConnection con)
         {
-            Console.WriteLine(@"Creating table 'bnd_contents'");
             var createTable = @"CREATE TABLE 'bnd_contents'
                 (
                  'source_file' TEXT NOT NULL,
                  'file_id' INTEGER NOT NULL,
-                 'Name' TEXT,
-                 'Flags' INTEGER,
-                 'CompressionType' TEXT,
-                 'ParamType' TEXT
+                 'name' TEXT,
+                 'flags' INTEGER,
+                 'compression_type' TEXT,
+                 'param_type' TEXT
                 )";
             using (var cmd = new SQLiteCommand(createTable, con))
             {
@@ -325,10 +314,9 @@ namespace ParamNexusDB
 
         private static void ReadBndTableOfContentsIntoDatabase(SQLiteConnection con, string filename, List<BndContentsEntry> bndContents)
         {
-            Console.WriteLine("Writing bnd_contents for: " + filename);
             var insert = @"INSERT INTO 'bnd_contents'
-                ('source_file', 'file_id', 'Name', 'Flags', 'CompressionType', 'ParamType')
-                VALUES ($source_file, $file_id, $Name, $Flags, $CompressionType, $ParamType)";
+                ('source_file', 'file_id', 'Name', 'flags', 'compression_type', 'param_type')
+                VALUES ($source_file, $file_id, $name, $flags, $compression_type, $param_type)";
 
             using (var cmd = new SQLiteCommand(insert, con))
             {
@@ -336,13 +324,10 @@ namespace ParamNexusDB
                 {
                     AddParamToCommand(cmd, @"$source_file", filename);
                     AddParamToCommand(cmd, @"$file_id", entry.FileId);
-                    AddParamToCommand(cmd, @"$Name", entry.Name);
-                    AddParamToCommand(cmd, @"$Flags", entry.Flags);
-                    AddParamToCommand(cmd, @"$CompressionType", entry.CompressionType.ToString());
-                    AddParamToCommand(cmd, @"$ParamType", entry.ParamType);
-                    
-                    Console.WriteLine("TEXT: " + cmd.CommandText);
-                    Console.WriteLine("\t" + filename);
+                    AddParamToCommand(cmd, @"$name", entry.Name);
+                    AddParamToCommand(cmd, @"$flags", entry.Flags);
+                    AddParamToCommand(cmd, @"$compression_type", entry.CompressionType.ToString());
+                    AddParamToCommand(cmd, @"$param_type", entry.ParamType);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -351,37 +336,37 @@ namespace ParamNexusDB
         private static void ReadParamdefsIntoDatabase(SQLiteConnection con, List<PARAMDEF> paramdefs)
         {
             // Create the main table and the fields table
-            Console.WriteLine(@"Creating table 'paramdef_metadata'");
             var createTable = @"CREATE TABLE IF NOT EXISTS 'paramdef_metadata'
                 (
-                 'ParamType' TEXT NOT NULL,
-                 'BigEndian' BOOLEAN,
-                 'Compression' TEXT,
-                 'Unicode' BOOLEAN,
-                 'Unk06' INTEGER,
-                 'Version' INTEGER
+                 'param_type' TEXT NOT NULL,
+                 'big_endian' BOOLEAN,
+                 'compression' TEXT,
+                 'unicode' BOOLEAN,
+                 'unk06' INTEGER,
+                 'version' INTEGER
                 )";
             using (var cmd = new SQLiteCommand(createTable, con))
             {
                 cmd.ExecuteNonQuery();
             }
+
             createTable = @"CREATE TABLE IF NOT EXISTS 'paramdef_fields'
                 (
-                 'ParamType' TEXT NOT NULL,
-                 'InternalName' TEXT NOT NULL,
-                 'InternalType' TEXT NOT NULL,
-                 'ArrayLength' INTEGER DEFAULT 1,
-                 'BitSize' INTEGER DEFAULT -1,
-                 'Default' REAL,
-                 'Description' TEXT,
-                 'EditFlags' INTEGER,
-                 'Increment' REAL,
-                 'Maximum' REAL,
-                 'Minimum' REAL,
-                 'DisplayFormat' TEXT,
-                 'DisplayName' TEXT,
-                 'DisplayType' TEXT,
-                 'SortID' INTEGER
+                 'param_type' TEXT NOT NULL,
+                 'internal_name' TEXT NOT NULL,
+                 'internal_type' TEXT NOT NULL,
+                 'array_length' INTEGER DEFAULT 1,
+                 'bit_size' INTEGER DEFAULT -1,
+                 'default' REAL,
+                 'description' TEXT,
+                 'edit_flags' INTEGER,
+                 'increment' REAL,
+                 'maximum' REAL,
+                 'minimum' REAL,
+                 'display_format' TEXT,
+                 'display_name' TEXT,
+                 'display_type' TEXT,
+                 'sort_id' INTEGER
                 )";
             using (var cmd = new SQLiteCommand(createTable, con))
             {
@@ -389,48 +374,48 @@ namespace ParamNexusDB
             }
 
             var insertParamdef = @"INSERT INTO 'paramdef_metadata'
-                ('ParamType', 'BigEndian', 'Compression', 'Unicode', 'Unk06', 'Version')
-                VALUES ($ParamType, $BigEndian, $Compression, $Unicode, $Unk06, $Version)";
+                ('param_type', 'big_endian', 'compression', 'unicode', 'unk06', 'version')
+                VALUES ($param_type, $big_endian, $compression, $unicode, $unk06, $version)";
 
             var insertFields = @"INSERT INTO 'paramdef_fields'
-                ('ParamType', 'InternalName', 'InternalType', 'ArrayLength', 'BitSize',
-                 'Default', 'Description', 'EditFlags', 'Increment', 'Maximum',
-                 'Minimum', 'DisplayFormat', 'DisplayName', 'DisplayType', 'SortID')
-                VALUES ($ParamType, $InternalName, $InternalType, $ArrayLength, $BitSize,
-                        $Default, $Description, $EditFlags, $Increment, $Maximum,
-                        $Minimum, $DisplayFormat, $DisplayName, $DisplayType, $SortID)";
+                ('param_type', 'internal_name', 'internal_type', 'array_length', 'bit_size',
+                 'default', 'description', 'edit_flags', 'increment', 'maximum',
+                 'minimum', 'display_format', 'display_name', 'display_type', 'sort_id')
+                VALUES ($param_type, $internal_name, $internal_type, $array_length, $bit_size,
+                        $default, $description, $edit_flags, $increment, $maximum,
+                        $minimum, $display_format, $display_name, $display_type, $sort_id)";
 
             using (var cmd = new SQLiteCommand(insertParamdef, con))
             using (var fieldsCmd = new SQLiteCommand(insertFields, con))
             {
                 foreach (PARAMDEF paramdef in paramdefs)
                 {
-                    AddParamToCommand(cmd, @"$ParamType", paramdef.ParamType);
-                    AddParamToCommand(cmd, @"$BigEndian", paramdef.BigEndian);
-                    AddParamToCommand(cmd, @"$Compression", paramdef.Compression.ToString());
-                    AddParamToCommand(cmd, @"$Unicode", paramdef.Unicode);
-                    AddParamToCommand(cmd, @"$Unk06", paramdef.Unk06);
-                    AddParamToCommand(cmd, @"$Version", paramdef.Version);
+                    AddParamToCommand(cmd, @"$param_type", paramdef.ParamType);
+                    AddParamToCommand(cmd, @"$big_endian", paramdef.BigEndian);
+                    AddParamToCommand(cmd, @"$compression", paramdef.Compression.ToString());
+                    AddParamToCommand(cmd, @"$unicode", paramdef.Unicode);
+                    AddParamToCommand(cmd, @"$unk06", paramdef.Unk06);
+                    AddParamToCommand(cmd, @"$version", paramdef.Version);
 
                     cmd.ExecuteNonQuery();
 
                     foreach (Field field in paramdef.Fields)
                     {
-                        AddParamToCommand(fieldsCmd, @"$ParamType", paramdef.ParamType);
-                        AddParamToCommand(fieldsCmd, @"$InternalName", field.InternalName);
-                        AddParamToCommand(fieldsCmd, @"$InternalType", field.InternalType);
-                        AddParamToCommand(fieldsCmd, @"$ArrayLength", field.ArrayLength);
-                        AddParamToCommand(fieldsCmd, @"$BitSize", field.BitSize);
-                        AddParamToCommand(fieldsCmd, @"$Default", field.Default);
-                        AddParamToCommand(fieldsCmd, @"$Description", field.Description);
-                        AddParamToCommand(fieldsCmd, @"$EditFlags", field.EditFlags);
-                        AddParamToCommand(fieldsCmd, @"$Increment", field.Increment);
-                        AddParamToCommand(fieldsCmd, @"$Maximum", field.Maximum);
-                        AddParamToCommand(fieldsCmd, @"$Minimum", field.Minimum);
-                        AddParamToCommand(fieldsCmd, @"$DisplayFormat", field.DisplayFormat);
-                        AddParamToCommand(fieldsCmd, @"$DisplayName", field.DisplayName);
-                        AddParamToCommand(fieldsCmd, @"$DisplayType", field.DisplayType);
-                        AddParamToCommand(fieldsCmd, @"$SortID", field.SortID);
+                        AddParamToCommand(fieldsCmd, @"$param_type", paramdef.ParamType);
+                        AddParamToCommand(fieldsCmd, @"$internal_name", field.InternalName);
+                        AddParamToCommand(fieldsCmd, @"$internal_type", field.InternalType);
+                        AddParamToCommand(fieldsCmd, @"$array_length", field.ArrayLength);
+                        AddParamToCommand(fieldsCmd, @"$bit_size", field.BitSize);
+                        AddParamToCommand(fieldsCmd, @"$default", field.Default);
+                        AddParamToCommand(fieldsCmd, @"$description", field.Description);
+                        AddParamToCommand(fieldsCmd, @"$edit_flags", field.EditFlags);
+                        AddParamToCommand(fieldsCmd, @"$increment", field.Increment);
+                        AddParamToCommand(fieldsCmd, @"$maximum", field.Maximum);
+                        AddParamToCommand(fieldsCmd, @"$minimum", field.Minimum);
+                        AddParamToCommand(fieldsCmd, @"$display_format", field.DisplayFormat);
+                        AddParamToCommand(fieldsCmd, @"$display_name", field.DisplayName);
+                        AddParamToCommand(fieldsCmd, @"$display_type", field.DisplayType);
+                        AddParamToCommand(fieldsCmd, @"$sort_id", field.SortID);
 
                         fieldsCmd.ExecuteNonQuery();
                     }
