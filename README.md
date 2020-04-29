@@ -119,10 +119,10 @@ export --db-location "<db_dir>\DeS.db" --overwrite-output-files false --output-f
 ### High level todos:
 * ~Kill all the hardcoding~. There's direct use of BND3 and so on, but most of the hardcoding is cleaned up.
 * ~Make it easier to interface with~. Added a CLI interface. 
-* Load the drawparams and such, too.
+* ~Load the drawparams and such, too.~
 * Plenty of refactoring, I'm sure
 * potentially expand past DS1
 * Clean up C# sins. I don't know what they are yet, but I'm sure I committed them.
 * ~Backup files if they'll be overwritten.~ Files will be written in the form `<original-name>.<unix-timestamp.bak`. Optionally can force overwrite.
 * Make an dead simple way for users to load data, not just CLI. Suggestions were .bat or drag-and-drop (and maybe just load supported files?)
-* Clean up the CLI help for subcommands.
+~* Clean up the CLI help for subcommands.~
