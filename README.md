@@ -90,6 +90,7 @@ This results in
 121	12	Saint Urbain
 122	12	Saint Urbain
 123	12	Saint Urbain
+...
 ```
 
 A more complex query could also provide the translated names of the items in the lots, or even update a large number of rows at the same time.
