@@ -24,7 +24,7 @@ Right now ParamNexus loads primarily Demon's Souls files, but Dark Souls 1 files
 ## Loading a database
 If you run ParamNexus.exe with no args, you'll get some usage info back:
 ```
-$ ./ParamNexus.exe
+$ ParamNexus
 Required command was not provided.
 
 Usage:
