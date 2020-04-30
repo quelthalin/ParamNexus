@@ -11,7 +11,7 @@ If you know C# already, the original SoulsFormats is a well-understood and commo
 The output of ParamNexus is a database file, you can load it up into an outside program, e.g. DBeaver as seen here:
 ![Querying for NPCs associated with item lots](/img/dbeaver_img.png?raw=true)
 
-Right now ParamNexus loads primarily Demon's Souls files, but Dark Souls 1 files currently load successfully. This might be useful for data discovery, but I'm not familiar enough to validate.
+Right now ParamNexus loads primarily Demon's Souls files, but Dark Souls Remaster gameparam (but not drawparam) currently load successfully. This might be useful for data discovery, but I'm not familiar enough to validate.
 
 ## How to setup the project
 * Assumes .NET Framework 4.8
@@ -126,3 +126,4 @@ export --db-location "<db_dir>\DeS.db" --overwrite-output-files false --output-f
 * ~Backup files if they'll be overwritten.~ Files will be written in the form `<original-name>.<unix-timestamp.bak`. Optionally can force overwrite.
 * Make an dead simple way for users to load data, not just CLI. Suggestions were .bat or drag-and-drop (and maybe just load supported files?)
 * ~Clean up the CLI help for subcommands.~
+* In the case of duplicate IDs, use the first instead of the last
