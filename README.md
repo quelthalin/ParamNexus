@@ -18,7 +18,7 @@ Right now ParamNexus loads primarily Demon's Souls files, but Dark Souls 1 files
 * Clone the project
 * https://github.com/JKAnderson/SoulsFormats is required.
   * This is referenced by ParamNexus as a local project, because there is no up to date release, to the best of my knowledge. Clone SoulsFormats in the same directory ParamNexus is cloned to.
-  * `cfcc6e6100dc6dd220d92533f8af8531a8689936` is a known working git commit.
+  * `99bd4d5de4eaebb1b849aecb2fd3e6d2d395c556` is a known working git commit.
 * At this point, you should be able to build the solution.
 
 ## Loading a database
