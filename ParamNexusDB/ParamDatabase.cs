@@ -29,12 +29,9 @@ namespace ParamNexusDB
                 {
                     if (File.Exists(DbLocation))
                     {
-                        // Only load the data we're told to load.
-                        if (paramdefLocation != null && paramDirs != null)
-                        {
-                            ParamLoader.LoadParams(con, paramdefLocation, paramDirs);
-                        }
+                        ParamLoader.LoadParams(con, paramdefLocation, paramDirs);
 
+                        // Only load the localizations if we have them.
                         if (messageDir != null)
                         {
                             MessageLoader.LoadMessages(con, messageDir);

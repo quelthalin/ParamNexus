@@ -72,14 +72,8 @@ namespace ParamNexus
                 if(String.IsNullOrEmpty(messageLocation))
                 {
                     Console.WriteLine("No --message-location is provided. Localizations will not be loaded.");
-                    valid = false;
+                    // Will carry forward without this.
                 }
-
-                //Console.WriteLine($"The value for --paramdef-location is: {paramdefLocation}");
-                //Console.WriteLine($"The value for --param-locations is: " + String.Join(",", paramLocations));
-                //Console.WriteLine($"The value for --message-location is: {messageLocation}");
-                //Console.WriteLine($"The value for --db-location is: {dbLocation}");
-
 
                 if (valid)
                 {
@@ -98,10 +92,6 @@ namespace ParamNexus
                     Console.WriteLine("Required option --db-location missing");
                     valid = false;
                 }
-
-                //Console.WriteLine($"The value for --output-files-dir is: {outputFilesDir}");
-                //Console.WriteLine($"The value for --overwrite-output-files is: {overwriteOutputFiles}");
-                //Console.WriteLine($"The value for --db-location is: {dbLocation}");
 
                 if (valid)
                 {

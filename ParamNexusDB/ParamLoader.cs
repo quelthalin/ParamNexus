@@ -93,7 +93,9 @@ namespace ParamNexusDB
                 foreach (BinderFile file in parambnd.Files)
                 {
                     PARAM param = PARAM.Read(file.Bytes);
+                    // DSR doesn't seem to like applying carefully, specifically SP_EFFECT_PARAM_ST in Gameparam. At minimum.
                     param.ApplyParamdef(paramdefs[param.ParamType]);
+
                     var entry = new BndContentsEntry(paramFilepath, file.ID, file.Name, file.Flags, file.CompressionType, param.ParamType);
                     bndContents.Add(entry);
                     ReadParamIntoDatabase(con, Path.GetFileNameWithoutExtension(file.Name), param);
@@ -149,11 +151,11 @@ namespace ParamNexusDB
                  'param_type' TEXT NOT NULL PRIMARY KEY,
                  'big_endian' BOOLEAN,
                  'compression' TEXT,
-                 'format2D' BLOB,
-                 'format2E' BLOB,
-                 'format2F' BLOB,
+                 'format2d' TEXT,
+                 'format2e' TEXT,
+                 'paramdef_format_version' BLOB,
                  'unk06' INTEGER,
-                 'unk08' INTEGER
+                 'paramdef_data_version' INTEGER
                 )";
             using (var cmd = new SQLiteCommand(createTable, con))
             {
@@ -163,18 +165,18 @@ namespace ParamNexusDB
         private static void ReadParamIntoDatabase(SQLiteConnection con, string tableName, PARAM paramFile)
         {
             var insert = @"INSERT OR IGNORE INTO 'param_metadata'
-                ('param_type', 'big_endian', 'compression', 'format2D', 'format2E', 'format2F', 'unk06', 'unk08')
-                VALUES ($param_type, $big_endian, $compression, $format2D, $format2E, $format2F, $unk06, $unk08)";
+                ('param_type', 'big_endian', 'compression', 'format2d', 'format2e', 'paramdef_format_version', 'unk06', 'paramdef_data_version')
+                VALUES ($param_type, $big_endian, $compression, $format2d, $format2e, $paramdef_format_version, $unk06, $paramdef_data_version)";
             using (var cmd = new SQLiteCommand(insert, con))
             {
                 AddParamToCommand(cmd, @"$param_type", paramFile.AppliedParamdef.ParamType);
                 AddParamToCommand(cmd, @"$big_endian", paramFile.BigEndian);
                 AddParamToCommand(cmd, @"$compression", paramFile.Compression.ToString());
-                AddParamToCommand(cmd, @"$format2D", new byte[] { paramFile.Format2D });
-                AddParamToCommand(cmd, @"$format2E", new byte[] { paramFile.Format2E });
-                AddParamToCommand(cmd, @"$format2F", new byte[] { paramFile.Format2F });
+                AddParamToCommand(cmd, @"$format2d", paramFile.Format2D.ToString());
+                AddParamToCommand(cmd, @"$format2e", paramFile.Format2E.ToString());
+                AddParamToCommand(cmd, @"$paramdef_format_version", new byte[] { paramFile.ParamdefFormatVersion });
                 AddParamToCommand(cmd, @"$unk06", paramFile.Unk06);
-                AddParamToCommand(cmd, @"$unk08", paramFile.Unk08);
+                AddParamToCommand(cmd, @"$paramdef_data_version", paramFile.ParamdefDataVersion);
                 cmd.ExecuteNonQuery();
             }
 
@@ -279,11 +281,6 @@ namespace ParamNexusDB
                 foreach (Row row in paramFile.Rows)
                 {
                     idParam.Value = row.ID;
-                    // At least DeS TALK_PARAM_ST has id -1. However, SoulsFormat uses unsigned for IDs, so it rolls over.
-                    if (row.ID == 4294967295)
-                    {
-                        idParam.Value = -1;
-                    }
                     foreach (Field field in realFields)
                     {
                         var param = fieldDict[field.InternalName];
@@ -342,8 +339,8 @@ namespace ParamNexusDB
                  'big_endian' BOOLEAN,
                  'compression' TEXT,
                  'unicode' BOOLEAN,
-                 'unk06' INTEGER,
-                 'version' INTEGER
+                 'data_version' INTEGER,
+                 'format_version' INTEGER
                 )";
             using (var cmd = new SQLiteCommand(createTable, con))
             {
@@ -374,8 +371,8 @@ namespace ParamNexusDB
             }
 
             var insertParamdef = @"INSERT INTO 'paramdef_metadata'
-                ('param_type', 'big_endian', 'compression', 'unicode', 'unk06', 'version')
-                VALUES ($param_type, $big_endian, $compression, $unicode, $unk06, $version)";
+                ('param_type', 'big_endian', 'compression', 'unicode', 'data_version', 'format_version')
+                VALUES ($param_type, $big_endian, $compression, $unicode, $data_version, $format_version)";
 
             var insertFields = @"INSERT INTO 'paramdef_fields'
                 ('param_type', 'internal_name', 'internal_type', 'array_length', 'bit_size',
@@ -394,8 +391,8 @@ namespace ParamNexusDB
                     AddParamToCommand(cmd, @"$big_endian", paramdef.BigEndian);
                     AddParamToCommand(cmd, @"$compression", paramdef.Compression.ToString());
                     AddParamToCommand(cmd, @"$unicode", paramdef.Unicode);
-                    AddParamToCommand(cmd, @"$unk06", paramdef.Unk06);
-                    AddParamToCommand(cmd, @"$version", paramdef.Version);
+                    AddParamToCommand(cmd, @"$data_version", paramdef.DataVersion);
+                    AddParamToCommand(cmd, @"$format_version", paramdef.FormatVersion);
 
                     cmd.ExecuteNonQuery();
 

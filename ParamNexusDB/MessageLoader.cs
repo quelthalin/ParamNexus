@@ -50,10 +50,13 @@ namespace ParamNexusDB
         private static void ReadMessagesIntoDatabase(SQLiteConnection con, string name, FMG msgFile)
         {
             var tableName = DesMsgFileNamesToEnglish.TryGetValue(name, out string value) ? value : name;
+            Console.WriteLine("Tablename is " + tableName);
 
             // Create the table to write into
+            // Oddly enough, DS1 seems to have multiple copies of the same data in the same file.
+            // Not sure if that's a source issue, or bug.
             var sb = new StringBuilder();
-            sb.Append(@"CREATE TABLE '");
+            sb.Append(@"CREATE TABLE IF NOT EXISTS'");
             sb.Append(tableName);
             sb.Append("' (");
 
@@ -67,7 +70,7 @@ namespace ParamNexusDB
 
             // Actually insert our data
             sb.Clear();
-            sb.Append(@"INSERT INTO '");
+            sb.Append(@"INSERT OR IGNORE INTO '");
             sb.Append(tableName);
             sb.Append(@"' (id, message) VALUES($id, $message);");
 
@@ -98,11 +101,8 @@ namespace ParamNexusDB
             List<string> messageFilepaths = new List<string>();
             messageFilepaths.AddRange(Directory.GetFiles(messageDir, "*.msgbnd.dcx"));
 
-            //var messages = new Dictionary<string, PARAM>();
             foreach (string messageFilepath in messageFilepaths)
             {
-                Console.WriteLine("Loading file: " + messageFilepath);
-
                 var msgbnd = BND3.Read(messageFilepath);
                 foreach (BinderFile file in msgbnd.Files)
                 {

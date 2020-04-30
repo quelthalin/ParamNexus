@@ -87,8 +87,8 @@ namespace ParamNexusDB
                         Compression = (DCX.Type)Enum.Parse(typeof(DCX.Type), reader.GetString(reader.GetOrdinal(@"compression"))),
                         ParamType = reader.GetString(reader.GetOrdinal(@"param_type")),
                         Unicode = reader.GetBoolean(reader.GetOrdinal(@"unicode")),
-                        Unk06 = reader.GetInt16(reader.GetOrdinal(@"unk06")),
-                        Version = reader.GetInt16(reader.GetOrdinal(@"version"))
+                        DataVersion = reader.GetInt16(reader.GetOrdinal(@"data_version")),
+                        FormatVersion = reader.GetInt16(reader.GetOrdinal(@"format_version"))
                     };
                     paramTypeToParamDef.Add(paramdef.ParamType, paramdef);
                 }
@@ -149,28 +149,28 @@ namespace ParamNexusDB
                     using (var cmd = new SQLiteCommand(@"SELECT * FROM '" + tableName + "';", con))
                     using (var metadataCmd = new SQLiteCommand(@"SELECT * FROM param_metadata WHERE param_type = $param_type", con))
                     {
-
                         var paramDef = paramTypeToParamDef[entry.Value.Key];
                         var paramFile = new PARAM();
                         paramFile.ParamType = entry.Value.Key;
+
+                        if (entry.Value.Key == "AI_STANDARD_INFO_BANK")
+                        {
+                            Console.WriteLine("Standard AI bank");
+                        }
 
                         AddParamToCommand(metadataCmd, @"$param_type", entry.Value.Key);
                         var metadataReader = metadataCmd.ExecuteReader();
                         while (metadataReader.Read())
                         {
                             paramFile.BigEndian = metadataReader.GetBoolean(metadataReader.GetOrdinal(@"big_endian"));
-                            paramFile.Compression = (DCX.Type)System.Enum.Parse(typeof(DCX.Type), metadataReader.GetString(metadataReader.GetOrdinal(@"compression")));
-                            byte[] buf = new byte[1]; // These 3 cols are all 1 byte
-                            metadataReader.GetBytes(metadataReader.GetOrdinal("format2D"), 0, buf, 0, 1); // Can't use GetBlob
-                            paramFile.Format2D = buf[0];
-                            buf = new byte[1];
-                            metadataReader.GetBytes(metadataReader.GetOrdinal("format2E"), 0, buf, 0, 1);
-                            paramFile.Format2E = buf[0];
-                            buf = new byte[1];
-                            metadataReader.GetBytes(metadataReader.GetOrdinal("format2F"), 0, buf, 0, 1);
-                            paramFile.Format2F = buf[0];
+                            paramFile.Compression = (DCX.Type)Enum.Parse(typeof(DCX.Type), metadataReader.GetString(metadataReader.GetOrdinal(@"compression")));
+                            paramFile.Format2D = (PARAM.FormatFlags1)Enum.Parse(typeof(PARAM.FormatFlags1), metadataReader.GetString(metadataReader.GetOrdinal(@"format2d")));
+                            paramFile.Format2E = (PARAM.FormatFlags2)Enum.Parse(typeof(PARAM.FormatFlags2), metadataReader.GetString(metadataReader.GetOrdinal(@"format2e")));
+                            byte[] buf = new byte[1];
+                            metadataReader.GetBytes(metadataReader.GetOrdinal("paramdef_format_version"), 0, buf, 0, 1);
+                            paramFile.ParamdefFormatVersion = buf[0];
                             paramFile.Unk06 = metadataReader.GetInt16(metadataReader.GetOrdinal(@"unk06"));
-                            paramFile.Unk08 = metadataReader.GetInt16(metadataReader.GetOrdinal(@"unk08"));
+                            paramFile.ParamdefDataVersion = metadataReader.GetInt16(metadataReader.GetOrdinal(@"paramdef_data_version"));
                         }
 
                         var reader = cmd.ExecuteReader();
@@ -178,11 +178,10 @@ namespace ParamNexusDB
                         while (reader.Read())
                         {
                             var id = reader.GetInt32(reader.GetOrdinal(@"id"));
-                            // TalkParamNA for some reason gets some absurd id values. No idea what's up there.
-                            // I think SoulsFormats might be treating it a
-                            if (id > 1000000 || id < -1)
+                            if (id == -1)
                             {
-                                id = -1;
+                                Console.WriteLine(@"Ignoring id of -1 in " + tableName);
+                                continue;
                             }
                             // Description can be NULL
                             var descOrdinal = reader.GetOrdinal(@"description");
@@ -231,6 +230,8 @@ namespace ParamNexusDB
                                 }
                             }
                         }
+
+                        // Don't apply carefully. We don't have the ability to set the DetectedSize. It only occurs on Read
                         paramFile.ApplyParamdef(paramDef);
                         var exc = new Exception();
                         if (!paramFile.Validate(out exc))
