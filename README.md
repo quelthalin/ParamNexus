@@ -40,7 +40,7 @@ Commands:
 
 We'll want to run the following command to load everything in. Make sure to replace `<path_to_paramdef>`, `<path_to_param>`, `<path_to_msg`, and `<output_dir` appropriately. Don't include a backslash at the end of paths. Feel free to choose a different DB name.
 ```
-import --paramdef-location "<path_to_paramdef>\paramdef.paramdefbnd.dcx" --param-locations "<path_to_param>gameparam" --param-locations "<path_to_param>\drawparam" --message-location "<path_to_msg>\na_english" --db-location "<output_dir>\DeS.db"
+import --paramdef-location "<path_to_paramdef>\paramdef.paramdefbnd.dcx" --param-locations "<path_to_param>/gameparam" --param-locations "<path_to_param>\drawparam" --message-location "<path_to_msg>\na_english" --db-location "<output_dir>\DeS.db"
 ```
 
 If everything goes successfully, you'll have an output database file.  Query it using your preferred SQL interface.  There's a few types of tables worth mentioning
@@ -90,6 +90,7 @@ This results in
 121	12	Saint Urbain
 122	12	Saint Urbain
 123	12	Saint Urbain
+...
 ```
 
 A more complex query could also provide the translated names of the items in the lots, or even update a large number of rows at the same time.
@@ -118,10 +119,10 @@ export --db-location "<db_dir>\DeS.db" --overwrite-output-files false --output-f
 ### High level todos:
 * ~Kill all the hardcoding~. There's direct use of BND3 and so on, but most of the hardcoding is cleaned up.
 * ~Make it easier to interface with~. Added a CLI interface. 
-* Load the drawparams and such, too.
+* ~Load the drawparams and such, too.~
 * Plenty of refactoring, I'm sure
 * potentially expand past DS1
 * Clean up C# sins. I don't know what they are yet, but I'm sure I committed them.
 * ~Backup files if they'll be overwritten.~ Files will be written in the form `<original-name>.<unix-timestamp.bak`. Optionally can force overwrite.
 * Make an dead simple way for users to load data, not just CLI. Suggestions were .bat or drag-and-drop (and maybe just load supported files?)
-* Clean up the CLI help for subcommands.
+* ~Clean up the CLI help for subcommands.~
