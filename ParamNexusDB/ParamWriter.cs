@@ -153,11 +153,6 @@ namespace ParamNexusDB
                         var paramFile = new PARAM();
                         paramFile.ParamType = entry.Value.Key;
 
-                        if (entry.Value.Key == "AI_STANDARD_INFO_BANK")
-                        {
-                            Console.WriteLine("Standard AI bank");
-                        }
-
                         AddParamToCommand(metadataCmd, @"$param_type", entry.Value.Key);
                         var metadataReader = metadataCmd.ExecuteReader();
                         while (metadataReader.Read())
@@ -178,16 +173,10 @@ namespace ParamNexusDB
                         while (reader.Read())
                         {
                             var id = reader.GetInt32(reader.GetOrdinal(@"id"));
-                            if (id == -1)
-                            {
-                                Console.WriteLine(@"Ignoring id of -1 in " + tableName);
-                                continue;
-                            }
                             // Description can be NULL
                             var descOrdinal = reader.GetOrdinal(@"description");
                             var description = reader.IsDBNull(descOrdinal) ? null : reader.GetFieldValue<string>(descOrdinal);
                             var row = new PARAM.Row(id, description, paramDef);
-                            paramFile.Rows.Add(row);
                             foreach (Field field in paramDef.Fields)
                             {
                                 var name = field.InternalName;
@@ -202,11 +191,11 @@ namespace ParamNexusDB
                                         int length = field.ArrayLength;
                                         if (field.BitSize == -1)
                                         {
-                                            paramFile[id][name].Value = Enumerable.Repeat((byte)0, length).ToArray();
+                                            row[name].Value = Enumerable.Repeat((byte)0, length).ToArray();
                                         }
                                         else
                                         {
-                                            paramFile[id][name].Value = 0;
+                                            row[name].Value = 0;
                                         }
                                         break;
                                     // All the integer cases
@@ -216,19 +205,21 @@ namespace ParamNexusDB
                                     case DefType.u8:
                                     case DefType.u16:
                                     case DefType.u32:
-                                        paramFile[id][name].Value = reader.GetInt32(reader.GetOrdinal(name));
+                                        row[name].Value = reader.GetInt32(reader.GetOrdinal(name));
                                         break;
                                     // Float cases
                                     case DefType.f32:
-                                        paramFile[id][name].Value = reader.GetFloat(reader.GetOrdinal(name));
+                                        row[name].Value = reader.GetFloat(reader.GetOrdinal(name));
                                         break;
                                     // String case
                                     case DefType.fixstr:
                                     case DefType.fixstrW:
-                                        paramFile[id][name].Value = reader.GetString(reader.GetOrdinal(name));
+                                        row[name].Value = reader.GetString(reader.GetOrdinal(name));
                                         break;
                                 }
                             }
+
+                            paramFile.Rows.Add(row);
                         }
 
                         // Don't apply carefully. We don't have the ability to set the DetectedSize. It only occurs on Read
