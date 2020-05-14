@@ -40,7 +40,7 @@ Commands:
 
 We'll want to run the following command to load everything in. Make sure to replace `<path_to_paramdef>`, `<path_to_param>`, `<path_to_msg>`, and `<output_dir>` appropriately.  `--message-location` is optional, but omitting it means localizations won't be loaded. Don't include a backslash at the end of paths. Feel free to choose a different DB name.
 ```
-import --paramdef-location "<path_to_paramdef>\paramdef.paramdefbnd.dcx" --param-locations "<path_to_param>/gameparam" --param-locations "<path_to_param>\drawparam" --message-location "<path_to_msg>\na_english" --db-location "<output_dir>\DeS.db"
+import --paramdef-location "<path_to_paramdef>\paramdef.paramdefbnd.dcx" --param-locations "<path_to_param>\gameparam" --param-locations "<path_to_param>\drawparam" --message-location "<path_to_msg>\na_english" --db-location "<output_dir>\DeS.db"
 ```
 
 If everything goes successfully, you'll have an output database file.  Query it using your preferred SQL interface.  There's a few types of tables worth mentioning
